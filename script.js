@@ -11,14 +11,14 @@ let turnoDe = "A", faseActual = "ban", mapasEscogidos = [];
 
 // LISTA DE LOS 8 CLASIFICADOS
 const listaEquipos = [
-  { nombre: "Hijas del Kaos", logo: "logo1.png" },
-  { nombre: "Rose Devil", logo: "logo2.png" },
-  { nombre: "Miaus", logo: "logo3.png" },
+  { nombre: "Hijas del Kaos", logo: "logo8.png" },
+  { nombre: "Rose Devil", logo: "logo1.png" },
+  { nombre: "Miaus", logo: "logo15.png" },
   { nombre: "Los Akrtona2", logo: "logo4.png" },
-  { nombre: "TETONES: Equipo Nacional de Somalia", logo: "logo5.png" },
-  { nombre: "Golden Sex", logo: "logo6.png" },
-  { nombre: "Team Obrikat", logo: "logo7.png" },
-  { nombre: "Makaco NinjaPelocho", logo: "logo8.png" }
+  { nombre: "TETONES: Equipo Nacional de Somalia", logo: "logo11.png" },
+  { nombre: "Golden Sex", logo: "logo2.png" },
+  { nombre: "Team Obrikat", logo: "logo10.png" },
+  { nombre: "Makaco NinjaPelocho", logo: "logo6.png" }
 ];
 
 const poolMapas = [
