@@ -2,28 +2,23 @@ const container = document.getElementById("contenedor-principal");
 const tituloFase = document.getElementById("titulo-fase");
 const instruccion = document.getElementById("instruccion");
 const footer = document.getElementById("footer-ui");
-const btnLanzar = document.getElementById("btn-lanzar");
-const header = document.getElementById("header-app");
+const body = document.body;
 
 let seleccionados = [];
-let turnoDe = "";
+let modoDeJuego = ""; 
+let bansMaxA = 0, bansMaxB = 0, bansRealizadosA = 0, bansRealizadosB = 0;
+let turnoDe = "A", faseActual = "ban", mapasEscogidos = [];
 
+// LISTA DE LOS 8 CLASIFICADOS
 const listaEquipos = [
-  { nombre: "Rose Devil", jugadores: ["Tony", "Jokker"], logo: "logo1.png" },
-  { nombre: "Golden Sex", jugadores: ["Max", "Broken"], logo: "logo2.png" },
-  { nombre: "Al-dedillo VC", jugadores: ["Xolo", "Noavae"], logo: "logo3.png" },
-  { nombre: "Los Akrtona2", jugadores: ["S3R4X", "MasterKira"], logo: "logo4.png" },
-  { nombre: "Crimson Eclipse", jugadores: ["ReyFhantom", "zNyrex "], logo: "logo5.png" },
-  { nombre: "Makaco NinjaPelocho", jugadores: ["Iker", "Adri"], logo: "logo6.png" },
-  { nombre: "Bloody Fruit", jugadores: ["MrPain 神", "Sandiass21"], logo: "logo7.png" },
-  { nombre: "Hijas del Kaos", jugadores: ["Satha", "Kaos"], logo: "logo8.png" },
-  { nombre: "Konoha Makaca", jugadores: ["MakaQuillo", "MakaIsla"], logo: "logo9.png" },
-  { nombre: "Team Obrikat", jugadores: ["JettDiffs", "EGOFack"], logo: "logo10.png" },
-  { nombre: "TETONES: Equipo Nacional de Somalia", jugadores: ["Marrkitosss", "Davv"], logo: "logo11.png" },
-  { nombre: "GOATS", jugadores: ["Mica", "Marco"], logo: "logo12.png" },
-  { nombre: "SPIDYBOOBS", jugadores: ["Sama", "Potro"], logo: "logo13.png" },
-  { nombre: "MUGIWARAS", jugadores: ["Andreloregon", "Jess"], logo: "logo14.png" },
-  { nombre: "Miaus", jugadores: ["Kae", "Wilson"], logo: "logo15.png" }
+  { nombre: "Hijas del Kaos", logo: "logo1.png" },
+  { nombre: "Rose Devil", logo: "logo2.png" },
+  { nombre: "Miaus", logo: "logo3.png" },
+  { nombre: "Los Akrtona2", logo: "logo4.png" },
+  { nombre: "TETONES: Equipo Nacional de Somalia", logo: "logo5.png" },
+  { nombre: "Golden Sex", logo: "logo6.png" },
+  { nombre: "Team Obrikat", logo: "logo7.png" },
+  { nombre: "Makaco NinjaPelocho", logo: "logo8.png" }
 ];
 
 const poolMapas = [
@@ -41,148 +36,179 @@ const poolMapas = [
     { n: "CORRODE", img: 'https://static.wikia.nocookie.net/valorant/images/6/6f/Loading_Screen_Corrode.png' }
 ];
 
-// 1. SELECCIÓN DE EQUIPOS
-function cargarEquipos() {
-    container.innerHTML = '';
-    container.className = "grid-equipos";
+function cargarModo() {
+    body.classList.remove("fase-activa"); // Centrado total
+    
+    // NUEVO: Envolvemos los botones en un div con clase 'fade-in'
+    container.innerHTML = `
+        <div class="fade-in" style="display:flex; gap:20px;">
+            <button class="btn-valorant" onclick="setModo('BO3')"><span class="btn-content">SEMIFINAL (BO3)</span></button>
+            <button class="btn-valorant" onclick="setModo('BO5')"><span class="btn-content">FINAL (BO5)</span></button>
+        </div>
+    `;
     tituloFase.textContent = "COPA PRIMATE";
-    instruccion.innerHTML = "SELECCIONA 2 EQUIPOS";
+    instruccion.innerHTML = "ELIGE EL FORMATO";
+}
+
+function setModo(modo) {
+    modoDeJuego = modo;
+    bansMaxA = (modo === "BO3") ? 5 : 4;
+    bansMaxB = (modo === "BO3") ? 4 : 3;
+    body.classList.add("fase-activa"); // Sube el contenido para dejar espacio a la grid
+    cargarEquipos();
+}
+
+function cargarEquipos() {
+    // NUEVO: Envolvemos la grid entera en un div con clase 'fade-in'
+    container.innerHTML = '<div class="grid-equipos fade-in" id="grid-eq"></div>';
+    const grid = document.getElementById("grid-eq");
+    instruccion.innerHTML = "EL PRIMER CLIC ES EL <span>EQUIPO A</span> (Más victorias)";
     
     listaEquipos.forEach(eq => {
         const div = document.createElement("div");
-        div.className = "card-equipo";
+        div.className = "card-equipo"; // La transición suave de borde ya está en el CSS
         div.innerHTML = `<img src="${eq.logo}" class="equipo-logo"><span class="nombre-equipo">${eq.nombre}</span>`;
-        
         div.onclick = () => {
             const index = seleccionados.findIndex(s => s.nombre === eq.nombre);
             if (index !== -1) {
                 seleccionados.splice(index, 1);
-                div.classList.remove("selected");
+                div.style.borderColor = "var(--card-border)";
+                div.style.boxShadow = "none";
             } else if (seleccionados.length < 2) {
                 seleccionados.push(eq);
-                div.classList.add("selected");
+                div.style.borderColor = (seleccionados.length === 1) ? "var(--omen-purple)" : "var(--omen-cyan)";
+                div.style.boxShadow = (seleccionados.length === 1) ? "0 0 15px var(--omen-purple)" : "0 0 15px var(--omen-cyan)";
             }
-            actualizarBordesSeleccion();
-            footer.style.display = (seleccionados.length === 2) ? "flex" : "none";
+            
+            if (seleccionados.length === 2) {
+                footer.style.display = "flex";
+                // NUEVO: Añadimos clase fade-in al footer cuando aparece
+                footer.classList.add("fade-in");
+                document.getElementById("btn-lanzar").onclick = iniciarVeto;
+            } else {
+                footer.style.display = "none";
+                footer.classList.remove("fade-in");
+            }
         };
-        container.appendChild(div);
+        grid.appendChild(div);
     });
 }
 
-function actualizarBordesSeleccion() {
-    const allCards = document.querySelectorAll('.card-equipo');
-    allCards.forEach(card => {
-        const nombre = card.querySelector('.nombre-equipo').textContent;
-        const pos = seleccionados.findIndex(s => s.nombre === nombre);
-        if (pos === 0) {
-            card.style.borderColor = "var(--omen-purple)";
-            card.style.boxShadow = "0 0 20px var(--omen-purple)";
-        } else if (pos === 1) {
-            card.style.borderColor = "var(--omen-cyan)";
-            card.style.boxShadow = "0 0 20px var(--omen-cyan)";
-        } else {
-            card.style.borderColor = "var(--card-border)";
-            card.style.boxShadow = "none";
-        }
-    });
-}
-
-// 2. SORTEO (JUSTO 50/50)
-btnLanzar.onclick = () => {
-    footer.style.display = "none";
-    const esCian = Math.random() < 0.5;
-    const ganador = esCian ? seleccionados[1] : seleccionados[0];
-    const colorMoneda = esCian ? 'var(--omen-cyan)' : 'var(--omen-purple)';
-
-    container.innerHTML = `
-        <div style="text-align:center; width:100%">
-            <div id="moneda" class="moneda-simple" style="margin: 0 auto;">🐵</div>
-            <h1 id="resultado-texto" style="margin-top:40px; font-family:'BertholdBlock'; font-size:3.5rem; color:white; opacity:0">SORTEANDO...</h1>
-        </div>
-    `;
-
-    const m = document.getElementById("moneda");
-    setTimeout(() => {
-        m.style.transform = "rotateY(1440deg)";
-        m.style.background = colorMoneda;
-    }, 100);
-
-    setTimeout(() => {
-        const resTxt = document.getElementById("resultado-texto");
-        resTxt.innerHTML = `${ganador.nombre.toUpperCase()} EMPIEZA`;
-        resTxt.style.opacity = "1";
-        // El color ya es blanco por el estilo inyectado arriba
-        turnoDe = ganador.nombre;
-        container.innerHTML += `<br><button class="btn-valorant" onclick="iniciarVeto()"><span class="btn-content">SIGUIENTE</span></button>`;
-    }, 2100);
-};
-
-// 3. FASE DE VETO
 function iniciarVeto() {
+    footer.style.display = "none";
+    footer.classList.remove("fade-in");
     container.innerHTML = '';
-    container.className = "grid-equipos modo-veto";
-    tituloFase.textContent = "VETO DE MAPAS";
+    // NUEVO: Clase 'fade-in' para la grid de mapas
+    container.className = "modo-veto fade-in";
+    tituloFase.textContent = `VETO ${modoDeJuego}`;
     actualizarInstruccion();
 
     poolMapas.forEach(mapa => {
         const card = document.createElement("div");
-        card.className = "card-mapa";
+        card.className = "card-mapa"; // Las transiciones de baneo están en el CSS
         card.style.backgroundImage = `url('${mapa.img}')`;
         card.innerHTML = `<div class="mapa-label">${mapa.n}</div>`;
-        card.onclick = () => {
-            if (!card.classList.contains("banned")) {
-                card.classList.add("banned");
-                turnoDe = (turnoDe === seleccionados[0].nombre) ? seleccionados[1].nombre : seleccionados[0].nombre;
-                actualizarInstruccion();
-                verificarGanador();
-            }
-        };
+        card.onclick = () => gestionarVeto(card, mapa.n);
         container.appendChild(card);
     });
 }
 
-function actualizarInstruccion() {
-    instruccion.innerHTML = `<span>${turnoDe.toUpperCase()}</span>`;
-}
+function gestionarVeto(card, nombre) {
+    // FASE DE BANEOS (Intercalado A-B)
+    if (faseActual === "ban" && !card.classList.contains("banned")) {
+        // Al añadir la clase, el CSS aplica el borde rojo neón suavemente
+        card.classList.add("banned");
+        if (turnoDe === "A") { bansRealizadosA++; turnoDe = "B"; }
+        else { bansRealizadosB++; turnoDe = "A"; }
 
-// 4. PANTALLA FINAL (NEGRO CON RELIEVE BLANCO)
-function verificarGanador() {
-    const restantes = document.querySelectorAll(".card-mapa:not(.banned)");
-    if (restantes.length === 1) {
-        const nombreMap = restantes[0].querySelector(".mapa-label").textContent;
-        const imgMap = restantes[0].style.backgroundImage;
+        if (bansRealizadosA === bansMaxA && bansRealizadosB === bansMaxB) {
+            faseActual = "pick"; 
+            turnoDe = "B"; // Según tu esquema, B empieza eligiendo primer mapa
+        }
+    } 
+    // FASE DE PICKS Y LADOS
+    else if (faseActual === "pick" && !card.classList.contains("banned") && !card.classList.contains("picked")) {
+        card.classList.add("picked");
+        const equipoQuePickea = seleccionados[turnoDe === "A" ? 0 : 1].nombre;
+        const equipoQueEligeLado = seleccionados[turnoDe === "A" ? 1 : 0].nombre;
         
-        header.style.display = "none";
-        container.innerHTML = '';
-        
-        const finalScreen = document.createElement("div");
-        finalScreen.className = "mapa-full-win";
-        finalScreen.style.backgroundImage = imgMap;
-        finalScreen.innerHTML = `
-            <div style="position:relative; z-index:10001; text-align:center">
-                <h2 style="font-family:'BertholdBlock'; font-size:3rem; color:black; text-shadow: 0 0 10px white;">MAPA SELECCIONADO</h2>
-                <h1 style="font-family:'BertholdBlock'; font-size:9.5rem; color:black; margin:20px 0; 
-                    text-shadow: -2px -2px 0 #fff, 2px -2px 0 #fff, -2px 2px 0 #fff, 2px 2px 0 #fff, 0 0 20px rgba(255,255,255,0.5);">
-                    ${nombreMap}
-                </h1>
-                <button class="btn-valorant" id="btn-soft-reset">
-                    <span class="btn-content">NUEVO VETO</span>
-                </button>
-            </div>
-        `;
-        document.body.appendChild(finalScreen);
-        document.getElementById("btn-soft-reset").onclick = resetSuave;
+        card.setAttribute("data-orden", mapasEscogidos.length + 1);
+
+        // Abrir selector de lado para el equipo contrario
+        pedirLado(equipoQueEligeLado, (lado) => {
+            mapasEscogidos.push({ mapa: nombre, pickea: equipoQuePickea, lado: lado });
+            
+            // Alternar turno de pick
+            turnoDe = (turnoDe === "A") ? "B" : "A";
+            
+            const limiteMapas = (modoDeJuego === "BO3") ? 2 : 4;
+            if (mapasEscogidos.length === limiteMapas) finalizarVeto();
+            else actualizarInstruccion();
+        });
     }
+    actualizarInstruccion();
 }
 
-// 5. REINICIO SIN CARGAR PÁGINA
-function resetSuave() {
+function pedirLado(equipo, callback) {
+    const overlay = document.createElement("div");
+    // NUEVO: Clase 'fade-in' para el overlay de selección de lado
+    overlay.className = "fade-in";
+    overlay.style.cssText = "position:fixed; inset:0; background:rgba(0,0,0,0.9); z-index:1000; display:flex; flex-direction:column; justify-content:center; align-items:center;";
+    overlay.innerHTML = `
+        <h2 style="font-family:'BertholdBlock'; font-size:2.5rem; margin-bottom:20px;">${equipo.toUpperCase()} ELIGE LADO</h2>
+        <div>
+            <button class="btn-valorant" id="atq"><span class="btn-content">ATACANTE</span></button>
+            <button class="btn-valorant" id="def"><span class="btn-content">DEFENSOR</span></button>
+        </div>
+    `;
+    document.body.appendChild(overlay);
+    document.getElementById("atq").onclick = () => { overlay.remove(); callback("ATACANTE"); };
+    document.getElementById("def").onclick = () => { overlay.remove(); callback("DEFENSOR"); };
+}
+
+function finalizarVeto() {
+    // El mapa sobrante es el Decider
+    const resto = [...document.querySelectorAll(".card-mapa")].find(c => !c.classList.contains("banned") && !c.classList.contains("picked"));
+    mapasEscogidos.push({ mapa: resto.querySelector(".mapa-label").textContent, pickea: "DECIDER", lado: "Por definir" });
+
+    body.classList.remove("fase-activa"); // Centrado para el final
+    container.className = "";
+    // NUEVO: Todo el contenido final se envuelve en un div con 'fade-in'
+    container.innerHTML = `
+        <div class="fade-in">
+            <h1 class="titulo-principal">VETO COMPLETADO</h1>
+            <table class="match-table">
+                <thead><tr><th>Orden</th><th>Mapa</th><th>Pickeado por</th><th>Lado Rival</th></tr></thead>
+                <tbody>
+                    ${mapasEscogidos.map((m, i) => `<tr><td>Mapa ${i+1}</td><td style="color:var(--omen-cyan)">${m.mapa}</td><td>${m.pickea}</td><td style="color:var(--valorant-red)">${m.lado}</td></tr>`).join("")}
+                </tbody>
+            </table>
+            <button class="btn-valorant" id="btn-soft-reset"><span class="btn-content">NUEVO VETO</span></button>
+        </div>
+    `;
+    instruccion.innerHTML = "";
+
+    // Asignar la función de reinicio al botón
+    document.getElementById("btn-soft-reset").onclick = resetearTodo;
+}
+
+// Limpia todas las variables y vuelve al menú de inicio
+function resetearTodo() {
     seleccionados = [];
-    turnoDe = "";
-    header.style.display = "flex";
-    const fs = document.querySelector(".mapa-full-win");
-    if (fs) fs.remove();
-    cargarEquipos();
+    modoDeJuego = "";
+    bansMaxA = 0; bansMaxB = 0;
+    bansRealizadosA = 0; bansRealizadosB = 0;
+    turnoDe = "A";
+    faseActual = "ban";
+    mapasEscogidos = [];
+    
+    // Volvemos a pintar el menú de BO3/BO5
+    cargarModo();
 }
 
-cargarEquipos();
+function actualizarInstruccion() {
+    const nombre = seleccionados[turnoDe === "A" ? 0 : 1].nombre;
+    instruccion.innerHTML = `${faseActual === "ban" ? "BANEANDO" : "PICKEANDO MAPA"}: <span>${nombre.toUpperCase()}</span>`;
+}
+
+cargarModo();
