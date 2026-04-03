@@ -5,13 +5,14 @@
 
 :root {
     --omen-deep: #07081a;
-    --omen-dark: #050612;
     --omen-purple: #7c72ff;
     --omen-cyan: #5fd0ff;
     --omen-glow: rgba(124, 114, 255, 0.55);
     --valorant-red: #ff4655;
     --card-bg: rgba(10, 10, 25, 0.9);
     --card-border: rgba(120, 120, 255, 0.18);
+    /* NUEVO: Sombra para el brillo rojo de ban */
+    --valorant-red-glow: rgba(255, 70, 85, 0.6); 
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -21,185 +22,121 @@ body {
     color: white;
     font-family: 'Inter', sans-serif;
     min-height: 100vh;
+    display: flex;
+    justify-content: center; /* Centrado horizontal */
+    align-items: center;     /* Centrado vertical */
     overflow-x: hidden;
 }
 
-/* --- FONDO ANIMADO OMEN --- */
+/* Fondo Omen animado */
 .omen-bg {
     position: fixed; inset: 0; z-index: -2;
     background: radial-gradient(circle at 50% 50%, rgba(90,80,255,0.25), transparent 55%),
                 radial-gradient(circle at 50% 50%, rgba(20,20,80,0.9), #050612 80%);
 }
-
 .bg-energy-core {
-    position: absolute; top: 50%; left: 50%;
-    width: 700px; height: 700px; transform: translate(-50%, -50%);
-    background: radial-gradient(circle, rgba(140,120,255,0.4), transparent 70%);
-    filter: blur(140px); animation: pulse 5s ease-in-out infinite;
+    position: absolute; top: 50%; left: 50%; width: 700px; height: 700px;
+    transform: translate(-50%, -50%); background: radial-gradient(circle, rgba(140,120,255,0.4), transparent 70%);
+    filter: blur(140px); animation: pulse 5s infinite;
 }
+@keyframes pulse { 0%, 100% { opacity: .4; } 50% { opacity: .7; } }
 
-@keyframes pulse {
-    0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: .4; }
-    50% { transform: translate(-50%, -50%) scale(1.15); opacity: .6; }
-}
-
-.noise-overlay {
-    position: fixed; inset: 0; z-index: 3; pointer-events: none; opacity: .04;
-    background-image: url("https://grainy-gradients.vercel.app/noise.svg");
-}
-
-/* --- HEADER CENTRADO --- */
-.main-header {
-    width: 100%; min-height: 25vh; display: flex; justify-content: center; align-items: center;
-    background: linear-gradient(to bottom, rgba(10,10,35,0.95), rgba(10,10,35,0.8), transparent);
-    border-bottom: 1px solid rgba(120,120,255,0.15);
-    padding: 20px;
-}
-
-.header-content {
-    display: flex; flex-direction: column; align-items: center; text-align: center;
-}
-
-.titulo-principal { 
-    font-family: 'BertholdBlock'; font-size: clamp(2.5rem, 6vw, 5rem); 
-    text-shadow: 0 0 30px var(--omen-glow); margin-bottom: 10px;
-}
-
-.vol-row { display: flex; align-items: center; justify-content: center; gap: 30px; }
-.vol-text { font-family: 'BertholdBlock'; font-size: 2.2rem; color: var(--omen-purple); }
-
-/* ESTILO PARA EL NOMBRE DEL EQUIPO EN VETO */
-#instruccion span {
-    font-family: 'BertholdBlock'; font-size: 3.5rem; color: var(--valorant-red);
-    text-shadow: 0 0 25px rgba(255, 70, 85, 0.4); animation: teamFade 0.4s ease-out;
-}
-
-@keyframes teamFade {
-    from { opacity: 0; transform: scale(0.9); }
-    to { opacity: 1; transform: scale(1); }
-}
-
-.sticker-monkey { width: 70px; filter: drop-shadow(0 0 15px var(--omen-cyan)); }
-
-/* --- GRID Y CARDS --- */
-.grid-equipos {
-    display: flex; flex-wrap: wrap; justify-content: center; gap: 20px; padding: 40px; max-width: 1800px; margin: 0 auto;
-}
-
-.modo-veto { display: grid !important; grid-template-columns: repeat(4, 1fr); width: 100%; }
-
-.card-equipo {
-    width: 280px; height: 110px; background: var(--card-bg); border-radius: 20px;
-    border: 2px solid var(--card-border); display: flex; align-items: center;
-    padding: 0 20px; cursor: pointer; transition: .3s;
-}
-
-.equipo-logo { width: 55px; height: 55px; object-fit: contain; margin-right: 15px; }
-.nombre-equipo { font-family: 'BertholdBlock'; font-size: 1.2rem; }
-
-/* --- MONEDA --- */
-.moneda-simple {
-    width: 180px; height: 180px; border-radius: 50%; border: 8px solid gold;
-    font-size: 7rem; display: flex; align-items: center; justify-content: center;
-    transition: transform 2s cubic-bezier(0.15, 0.88, 0.3, 1), background 0.5s;
-    box-shadow: 0 0 40px rgba(255, 215, 0, 0.5); background: var(--omen-deep);
-}
-
-/* --- TEXTO GANADOR SORTEO --- */
-#resultado-texto {
-    font-family: 'BertholdBlock'; font-size: 3.5rem; color: white !important;
-    text-shadow: 0 0 15px rgba(255,255,255,0.4);
-}
-
-/* --- MAPAS --- */
-.card-mapa {
-    height: 240px; border-radius: 20px; background-size: cover; background-position: center;
-    border: 2px solid var(--card-border); position: relative; cursor: pointer;
-    display: flex; align-items: flex-end; overflow: hidden; transition: 0.4s;
-}
-
-.mapa-label {
-    background: linear-gradient(to top, rgba(0,0,0,0.9), transparent);
-    width: 100%; padding: 15px; font-family: 'BertholdBlock'; font-size: 2rem;
-}
-
-.card-mapa.banned { filter: grayscale(1) brightness(0.2); pointer-events: none; }
-.card-mapa.banned::after {
-    content: "BANEADO"; position: absolute; top: 50%; left: 50%;
-    transform: translate(-50%, -50%) rotate(-15deg);
-    color: var(--valorant-red); font-family: 'BertholdBlock';
-    font-size: 3rem; border: 4px solid var(--valorant-red); padding: 5px 15px;
-}
-
-/* --- PANTALLA GANADOR (FULL SCREEN FIX) --- */
-.mapa-full-win {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    z-index: 9999;
-    
-    background-size: cover;      /* Cubre todo sin cortes */
-    background-position: center; /* Centra la imagen */
-    background-repeat: no-repeat;
-    background-attachment: fixed;
-    
+/* Contenedor que agrupa Título + Contenido */
+#app-container {
+    width: 100%;
+    max-width: 1400px;
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
+    text-align: center;
+    z-index: 5;
 }
 
-/* Oscurecimiento del fondo para legibilidad */
-.mapa-full-win::before { 
-    content: ""; 
-    position: absolute; 
-    inset: 0; 
-    background: radial-gradient(circle, transparent 10%, rgba(0,0,0,0.7) 90%);
-    z-index: -1; 
+/* Cuando estamos en fase de selección de equipos o mapas, quitamos el centrado vertical del body */
+body.fase-activa { align-items: flex-start; padding-top: 5vh; }
+
+.titulo-principal { 
+    font-family: 'BertholdBlock'; font-size: clamp(3rem, 8vw, 5rem); 
+    text-shadow: 0 0 30px var(--omen-glow); margin-bottom: 10px;
 }
 
-/* Textos finales Negro con Relieve Blanco */
-.mapa-full-win h1 {
-    font-family: 'BertholdBlock'; 
-    font-size: clamp(4rem, 12vw, 10rem); 
-    color: black !important;
-    line-height: 1;
-    /* Relieve Blanco Grueso + Glow */
-    text-shadow: 
-        -3px -3px 0 #fff,  
-         3px -3px 0 #fff,
-        -3px  3px 0 #fff,
-         3px  3px 0 #fff,
-        -5px  0px 0 #fff,
-         5px  0px 0 #fff,
-         0px -5px 0 #fff,
-         0px  5px 0 #fff,
-         0 0 30px rgba(255,255,255,0.8); 
-    margin: 10px 0 30px 0;
-    text-transform: uppercase;
+.vol-text { font-family: 'BertholdBlock'; font-size: 1.8rem; color: var(--omen-purple); margin-bottom: 30px; }
+.vol-text span { color: var(--valorant-red); text-shadow: 0 0 15px rgba(255,70,85,0.5); }
+
+/* --- NUEVO: Transiciones Suaves (Fade-in global) --- */
+.fade-in {
+    animation: fadeInAnimation 0.5s ease-in-out forwards;
+    opacity: 0; /* Empieza invisible */
 }
 
-.mapa-full-win h2 {
-    font-family: 'BertholdBlock'; 
-    font-size: 3rem; 
-    color: black !important;
-    /* Relieve más fino para el subtítulo */
-    text-shadow: 
-        -1.5px -1.5px 0 #fff,  
-         1.5px -1.5px 0 #fff,
-        -1.5px  1.5px 0 #fff,
-         1.5px  1.5px 0 #fff,
-         0 0 15px rgba(255,255,255,0.5);
+@keyframes fadeInAnimation {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
 }
 
-/* --- BOTONES --- */
-.footer-controls { display: flex; justify-content: center; padding: 40px; }
-.btn-valorant { background: transparent; border: none; cursor: pointer; }
+/* Grid de Equipos */
+.grid-equipos { display: flex; flex-wrap: wrap; justify-content: center; gap: 20px; padding: 20px; }
+.card-equipo {
+    width: 260px; height: 100px; background: var(--card-bg); border-radius: 15px;
+    border: 2px solid var(--card-border); display: flex; align-items: center;
+    padding: 15px; cursor: pointer;
+    transition: 0.3s ease-out; /* NUEVO: Transición suave de borde y sombra */
+}
+.equipo-logo { width: 50px; height: 50px; object-fit: contain; margin-right: 15px; }
+.nombre-equipo { font-family: 'BertholdBlock'; font-size: 1.1rem; }
+
+/* Grid de Mapas */
+.modo-veto { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; width: 90%; margin-top: 20px; }
+.card-mapa {
+    height: 180px; border-radius: 15px; border: 2px solid var(--card-border);
+    background-size: cover; background-position: center; position: relative;
+    cursor: pointer; display: flex; align-items: flex-end; overflow: hidden;
+    transition: 0.4s ease-in-out; /* NUEVO: Transición suave para baneos y picks */
+}
+.mapa-label { background: rgba(0,0,0,0.8); width: 100%; padding: 10px; font-family: 'BertholdBlock'; font-size: 1.4rem; }
+
+/* --- NUEVO: Mapas BANEADOS con Contorno Rojo Agresivo y Brillo --- */
+.card-mapa.banned {
+    filter: grayscale(1) brightness(0.3);
+    border: 4px solid var(--valorant-red) !important; /* Contorno rojo grueso */
+    box-shadow: 0 0 25px var(--valorant-red-glow) !important; /* Brillo rojo */
+    pointer-events: none; /* Desactiva clics */
+}
+.card-mapa.banned::after {
+    content: "BAN"; position: absolute; top: 35%; left: 25%; color: var(--valorant-red);
+    font-family: 'BertholdBlock'; font-size: 3rem; border: 4px solid; padding: 5px 15px; transform: rotate(-15deg);
+    text-shadow: 0 0 10px var(--valorant-red-glow);
+}
+
+.card-mapa.picked { border-color: gold; box-shadow: 0 0 15px gold; }
+.card-mapa.picked::after {
+    content: attr(data-orden); position: absolute; top: 15px; right: 15px;
+    background: gold; color: black; font-family: 'BertholdBlock';
+    font-size: 1.5rem; width: 40px; height: 40px; display: flex;
+    justify-content: center; align-items: center; border-radius: 50%;
+}
+
+.card-mapa.picked .mapa-label { color: gold; }
+
+/* Tabla Final */
+.match-table {
+    margin: 30px auto; border-collapse: collapse; background: var(--card-bg);
+    border-radius: 15px; overflow: hidden; min-width: 700px;
+}
+.match-table th, .match-table td {
+    padding: 20px; text-align: center; font-family: 'BertholdBlock'; font-size: 1.5rem;
+    border-bottom: 1px solid var(--card-border);
+}
+.match-table th { background: rgba(124, 114, 255, 0.2); color: var(--omen-purple); }
+
+/* Botón Estilo Valorant */
+.btn-valorant { background: transparent; border: none; cursor: pointer; margin: 20px; }
 .btn-content {
-    display: block; background: var(--valorant-red); padding: 18px 60px; color: white;
-    font-weight: 900; font-size: 1.3rem; letter-spacing: 2px; font-family: 'BertholdBlock';
-    clip-path: polygon(10% 0, 100% 0, 90% 100%, 0 100%); transition: 0.3s;
+    display: block; background: var(--valorant-red); padding: 15px 50px; color: white;
+    font-weight: 900; font-size: 1.3rem; letter-spacing: 2px;
+    font-family: 'BertholdBlock';
+    clip-path: polygon(10% 0, 100% 0, 90% 100%, 0 100%); transition: 0.2s;
 }
-.btn-content:hover { filter: brightness(1.2); transform: scale(1.05); }
+.btn-content:hover { transform: scale(1.05); filter: brightness(1.2); }
+
+.noise-overlay { position: fixed; inset: 0; z-index: 10; pointer-events: none; opacity: .04; background-image: url("https://grainy-gradients.vercel.app/noise.svg"); }
