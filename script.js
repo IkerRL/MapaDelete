@@ -390,50 +390,147 @@ function resetearTodo() {
 
 cargarModo();
 
-// ==========================================================================
-// SINCRONIZACIÓN EN VIVO (MQTT VIA HIVEMQ)
-// ==========================================================================
+// ================================================================
+// SINCRONIZACIÓN EN VIVO (MQTT via HiveMQ)
+// ================================================================
+const syncToggleBtn = document.getElementById('syncToggleBtn');
+const syncPanel = document.getElementById('syncPanel');
+const syncPulse = document.getElementById('syncPulse');
+const syncStatusBadge = document.getElementById('syncStatusBadge');
+const syncRoomInput = document.getElementById('syncRoomInput');
+const btnSyncConnect = document.getElementById('btnSyncConnect');
+const btnSyncCopyLink = document.getElementById('btnSyncCopyLink');
+const btnSyncDisconnect = document.getElementById('btnSyncDisconnect');
+const syncConnectedActions = document.getElementById('syncConnectedActions');
+const syncBrokerInput = document.getElementById('syncBrokerInput');
+const syncTopicInput = document.getElementById('syncTopicInput');
+
 let mqttClient = null;
 let mqttTopic = '';
 let isApplyingSyncState = false;
+
+// Historial de mensajes para evitar duplicados (self-echo)
 const MSG_HISTORIAL = new Set();
 window.isPantalla = false;
 
-window.addEventListener('load', () => {
-    initializeMQTTSync();
+// Toggle panel
+if (syncToggleBtn) {
+    syncToggleBtn.addEventListener('click', () => {
+        if (syncPanel) syncPanel.classList.toggle('active');
+    });
+}
+document.addEventListener('click', (e) => {
+    const monkeyRight = document.querySelector('.monkey-right');
+    const isMonkeyClick = monkeyRight && monkeyRight.contains(e.target);
+    if (!isMonkeyClick && syncPanel && !syncPanel.contains(e.target) && syncToggleBtn && !syncToggleBtn.contains(e.target)) {
+        syncPanel.classList.remove('active');
+    }
 });
 
-function initializeMQTTSync() {
-    const urlParams = new URLSearchParams(window.location.search);
-    const roomParam = urlParams.get('room');
-    const isAdmin = urlParams.get('admin') === 'true';
+// Generar código de sala aleatorio
+function generateRandomRoom() {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    let code = 'VETO-';
+    for (let i = 0; i < 5; i++) {
+        code += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return code;
+}
 
-    if (roomParam) {
-        window.roomName = roomParam;
-        if (!isAdmin) {
-            window.isPantalla = true;
-            document.body.classList.add('pantalla-mode');
-            // Deshabilitar interacciones en modo pantalla
-            document.body.style.pointerEvents = 'none';
-            const syncBtn = document.getElementById('syncToggleBtn');
-            if (syncBtn) syncBtn.style.display = 'none';
+// Auto-rellenar sala desde URL o generar una nueva
+const urlParams = new URLSearchParams(window.location.search);
+const roomParam = urlParams.get('room');
+const isPantalla = urlParams.get('pantalla') === 'true';
+const isAdmin = urlParams.get('admin') === 'true';
+
+// Determinar el rol/modo de forma dinámica
+if (roomParam) {
+    window.roomName = roomParam;
+
+    // Si tiene sala por URL pero no tiene &admin=true, por defecto actúa como Pantalla
+    if (!isAdmin) {
+        window.isPantalla = true;
+        document.body.classList.add('pantalla-mode');
+
+        // Si es el modo de pantalla limpia de OBS, añadimos obs-mode para desactivar interacciones
+        if (isPantalla) {
+            document.body.classList.add('obs-mode');
+        } else {
+            // Si no es OBS limpio, mostramos el botón de admin (si existe en el DOM)
+            const adminBtn = document.getElementById('admin-btn');
+            if (adminBtn) adminBtn.style.display = 'block';
         }
-        connectMQTT(roomParam);
-    } else {
-        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-        let code = 'VETO-';
-        for (let i = 0; i < 5; i++) code += chars.charAt(Math.floor(Math.random() * chars.length));
-        window.history.replaceState({}, '', `?room=${code}&admin=true`);
-        window.roomName = code;
-        connectMQTT(code);
+    }
+
+    // Conectar automáticamente a la sala
+    if (syncRoomInput) syncRoomInput.value = roomParam;
+    setTimeout(() => connectMQTT(roomParam), 600);
+} else {
+    // Si abrimos la URL raíz sin parámetros, es modo Admin por defecto y genera código de sala
+    if (syncRoomInput) syncRoomInput.value = generateRandomRoom();
+}
+
+// Función para abrir el panel de control en un popup
+window.abrirPanel = function() {
+    const rName = window.roomName || (syncRoomInput ? syncRoomInput.value : '');
+    const url = `${window.location.origin}${window.location.pathname}?room=${encodeURIComponent(rName)}&admin=true`;
+    console.log("[Antigravity] abrirPanel called with URL:", url);
+    window.open(url, 'PanelControl', 'width=1100,height=850,resizable=yes');
+};
+
+window.mostrarPanelSync = function() {
+    if (window.isPantalla) return;
+    if (syncPanel) syncPanel.classList.toggle('active');
+};
+
+// Actualizar UI de estado de conexión
+function updateConnectionStatus(status) {
+    if (syncPulse) syncPulse.className = 'pulse-icon';
+    if (syncStatusBadge) syncStatusBadge.className = 'status-badge';
+
+    if (status === 'disconnected') {
+        if (syncPulse) syncPulse.classList.add('red');
+        if (syncStatusBadge) {
+            syncStatusBadge.classList.add('status-disconnected');
+            syncStatusBadge.textContent = 'DESCONECTADO';
+        }
+        if (btnSyncConnect) btnSyncConnect.style.display = 'inline-block';
+        if (syncConnectedActions) syncConnectedActions.style.display = 'none';
+        if (syncRoomInput) syncRoomInput.disabled = false;
+    } else if (status === 'connecting') {
+        if (syncPulse) syncPulse.classList.add('yellow');
+        if (syncStatusBadge) {
+            syncStatusBadge.classList.add('status-connecting');
+            syncStatusBadge.textContent = 'CONECTANDO...';
+        }
+        if (btnSyncConnect) btnSyncConnect.style.display = 'none';
+        if (syncConnectedActions) syncConnectedActions.style.display = 'none';
+        if (syncRoomInput) syncRoomInput.disabled = true;
+    } else if (status === 'connected') {
+        if (syncPulse) syncPulse.classList.add('green');
+        if (syncStatusBadge) {
+            syncStatusBadge.classList.add('status-connected');
+            syncStatusBadge.textContent = `SALA: ${syncRoomInput ? syncRoomInput.value : ''}`;
+        }
+        if (btnSyncConnect) btnSyncConnect.style.display = 'none';
+        if (syncConnectedActions) syncConnectedActions.style.display = 'flex';
+        if (syncRoomInput) syncRoomInput.disabled = true;
     }
 }
 
+// Conectar al broker MQTT
 function connectMQTT(roomName) {
-    if (mqttClient) mqttClient.end(true);
-    const broker = 'wss://broker.hivemq.com:8884/mqtt';
-    const topicBase = 'copa_primate_veto';
+    if (mqttClient) {
+        mqttClient.end(true);
+        mqttClient = null;
+    }
+
+    const broker = (syncBrokerInput?.value.trim()) || 'wss://broker.hivemq.com:8884/mqtt';
+    const topicBase = (syncTopicInput?.value.trim()) || 'copa_primate_veto';
     mqttTopic = `${topicBase}/${roomName.trim()}`;
+
+    console.log(`Conectando a MQTT broker: ${broker} | Tema: ${mqttTopic}`);
+    updateConnectionStatus('connecting');
 
     mqttClient = mqtt.connect(broker, {
         clientId: 'veto_' + Math.random().toString(16).slice(2, 10),
@@ -442,41 +539,71 @@ function connectMQTT(roomName) {
     });
 
     mqttClient.on('connect', () => {
+        console.log(`Conectado a MQTT en sala: ${roomName}`);
+        updateConnectionStatus('connected');
         mqttClient.subscribe(mqttTopic, { qos: 0 });
-        if (window.isPantalla) {
-            publishMQTT({ type: 'REQUEST_STATE' });
-        } else {
-            broadcastState();
-        }
+        // Pedir estado actual a otros clientes conectados
+        publishMQTT({ type: 'REQUEST_STATE' });
     });
 
     mqttClient.on('message', (topic, payload) => {
         try {
             const msg = JSON.parse(payload.toString());
+
+            // Deduplicar: ignorar mensajes propios
             if (msg._id && MSG_HISTORIAL.has(msg._id)) return;
+
+            console.log('Mensaje MQTT recibido:', msg.type);
+
             if (msg.type === 'REQUEST_STATE') {
+                // Responder con el estado si tenemos algo
                 if (!window.isPantalla) broadcastState();
             } else if (msg.type === 'STATE_UPDATE') {
                 isApplyingSyncState = true;
                 aplicarEstado(msg.state);
                 isApplyingSyncState = false;
             }
-        } catch (e) { }
+        } catch (e) {
+            console.error('Error al procesar mensaje MQTT:', e);
+        }
+    });
+
+    mqttClient.on('reconnect', () => {
+        console.log('Reconectando a MQTT...');
+        updateConnectionStatus('connecting');
+    });
+
+    mqttClient.on('error', (err) => {
+        console.error('Error MQTT:', err);
+        updateConnectionStatus('disconnected');
+    });
+
+    mqttClient.on('close', () => {
+        console.log('Conexión MQTT cerrada');
+        updateConnectionStatus('disconnected');
     });
 }
 
+// Publicar mensaje en el tema de la sala
 function publishMQTT(msg) {
     if (!mqttClient || !mqttClient.connected) return;
     const id = Math.random().toString(36).slice(2, 10);
     msg._id = id;
     MSG_HISTORIAL.add(id);
-    if (MSG_HISTORIAL.size > 200) MSG_HISTORIAL.delete(MSG_HISTORIAL.values().next().value);
+    // Limpiar historial para no acumular indefinidamente
+    if (MSG_HISTORIAL.size > 200) {
+        const first = MSG_HISTORIAL.values().next().value;
+        MSG_HISTORIAL.delete(first);
+    }
     mqttClient.publish(mqttTopic, JSON.stringify(msg), { qos: 0, retain: false });
 }
 
+// Serializar y emitir el estado completo del torneo
 function broadcastState() {
     if (isApplyingSyncState || window.isPantalla) return;
     if (!mqttClient || !mqttClient.connected) return;
+
+    console.log('Publicando estado via MQTT...');
 
     const state = {
         modoDeJuego,
@@ -498,8 +625,11 @@ function broadcastState() {
     publishMQTT({ type: 'STATE_UPDATE', state });
 }
 
+// Aplicar estado recibido de la red
 function aplicarEstado(state) {
     if (!state) return;
+    console.log('Aplicando estado recibido de red...');
+
     modoDeJuego = state.modoDeJuego;
     seleccionados = state.seleccionados || [];
     bansMaxA = state.bansMaxA;
@@ -527,43 +657,64 @@ function aplicarEstado(state) {
     if (overlay) overlay.remove();
 }
 
-// ==========================================================================
-// LÓGICA DEL MENÚ DE SINCRONIZACIÓN
-// ==========================================================================
-function getShareUrl() {
-    return `${window.location.origin}${window.location.pathname}?room=${encodeURIComponent(window.roomName || '')}`;
+// ── Botones del panel ────────────────────────────────────────────
+if (btnSyncConnect) {
+    btnSyncConnect.addEventListener('click', () => {
+        const room = syncRoomInput ? syncRoomInput.value.trim() : '';
+        if (!room) { alert('Introduce un código de sala válido.'); return; }
+        connectMQTT(room);
+    });
 }
 
-window.mostrarPanelSync = function() {
-    if (window.isPantalla) return;
-    document.getElementById('syncPanel').classList.toggle('active');
-    const input = document.getElementById('syncRoomInput');
-    if (input) input.value = getShareUrl();
-};
+if (btnSyncDisconnect) {
+    btnSyncDisconnect.addEventListener('click', () => {
+        if (mqttClient) { mqttClient.end(true); mqttClient = null; }
+        updateConnectionStatus('disconnected');
+    });
+}
 
+if (btnSyncCopyLink) {
+    btnSyncCopyLink.addEventListener('click', () => {
+        const room = syncRoomInput ? syncRoomInput.value.trim() : '';
+        const shareUrl = `${window.location.origin}${window.location.pathname}?room=${encodeURIComponent(room)}`;
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(shareUrl).then(() => {
+                const orig = btnSyncCopyLink.innerHTML;
+                btnSyncCopyLink.innerHTML = '✓ ¡COPIADO!';
+                setTimeout(() => { btnSyncCopyLink.innerHTML = orig; }, 2000);
+            }).catch(() => alert(`Copia este enlace: ${shareUrl}`));
+        } else {
+            prompt('Pulsa Ctrl+C o Cmd+C para copiar el enlace:', shareUrl);
+        }
+    });
+}
+
+// Fallback compatible con el onclick HTML de index.html original
 window.copiarEnlace = function() {
-    const shareUrl = getShareUrl();
+    const room = syncRoomInput ? syncRoomInput.value.trim() : '';
+    const shareUrl = `${window.location.origin}${window.location.pathname}?room=${encodeURIComponent(room)}`;
     const span = document.getElementById('btnSyncCopyLinkSpan');
     
+    const orig = span ? span.innerHTML : '';
+
+    const successUI = () => {
+        if (span) {
+            span.innerHTML = '✓ ¡COPIADO!';
+            span.style.background = 'var(--omen-cyan)';
+            span.style.color = 'black';
+            setTimeout(() => { 
+                span.innerHTML = orig; 
+                span.style.background = '';
+                span.style.color = 'white';
+            }, 2000);
+        }
+    };
+
     if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(shareUrl).then(() => {
-            if (span) {
-                const orig = span.innerHTML;
-                span.innerHTML = '✓ ¡COPIADO!';
-                span.style.background = 'var(--omen-cyan)';
-                span.style.color = 'black';
-                setTimeout(() => { 
-                    span.innerHTML = orig; 
-                    span.style.background = '';
-                    span.style.color = 'white';
-                }, 2000);
-            }
-        }).catch(err => {
-            console.error('Error copiando al portapapeles:', err);
+        navigator.clipboard.writeText(shareUrl).then(successUI).catch(err => {
             prompt('Pulsa Ctrl+C o Cmd+C para copiar el enlace:', shareUrl);
         });
     } else {
-        // Fallback si se usa file:/// u otro entorno sin portapapeles
         prompt('Pulsa Ctrl+C o Cmd+C para copiar el enlace:', shareUrl);
     }
 };
