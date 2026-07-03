@@ -21,8 +21,8 @@ const listaEquipos = [
     { nombre: "Soul Resonance", jugadores: ["KrypT", "IAngeil-"], logo: "logo11.png" },
     { nombre: "Thunder Buddies", jugadores: ["Brrokeen", "Pipe"], logo: "logo3.png" },
     { nombre: "Stranger Picks", jugadores: ["TheDori", "Sotomi"], logo: "logo9.png" },
-    { nombre: "Chuu-Chuu 100% MAX", jugadores: ["MakaQuillo", "Max"], logo: "logo6.png" },
-    { nombre: "M&L’s", jugadores: ["Marru", "Lauliet"], logo: "logo13.png" },
+    { nombre: "Makaco Ninja-Pelocho", jugadores: ["MakaQuillo", "Max"], logo: "logo6.png" },
+    { nombre: "Chuu-Chuu 100% MAX", jugadores: ["Marru", "Lauliet"], logo: "logo8.png" },
     { nombre: "MARIIKS", jugadores: ["Acid", "Bru"], logo: "logo10.png" }
 ];
 
