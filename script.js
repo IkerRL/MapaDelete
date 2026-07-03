@@ -467,7 +467,11 @@ if (roomParam) {
     setTimeout(() => connectMQTT(roomParam), 600);
 } else {
     // Si abrimos la URL raíz sin parámetros, es modo Admin por defecto y genera código de sala
-    if (syncRoomInput) syncRoomInput.value = generateRandomRoom();
+    const code = generateRandomRoom();
+    if (syncRoomInput) syncRoomInput.value = code;
+    window.roomName = code;
+    window.history.replaceState({}, '', `?room=${code}&admin=true`);
+    connectMQTT(code);
 }
 
 // Función para abrir el panel de control en un popup
