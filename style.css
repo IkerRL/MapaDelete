@@ -379,45 +379,5 @@ body.fase-activa { align-items: flex-start; padding-top: 5vh; }
     letter-spacing: 2px;
 }
 
-/* --- MULTIPLAYER SYNC PANEL --- */
-.sync-panel {
-    position: fixed;
-    bottom: 80px;
-    right: 20px;
-    width: 300px;
-    background: rgba(15, 15, 30, 0.95);
-    backdrop-filter: blur(10px);
-    border: 1px solid var(--omen-cyan);
-    border-radius: 10px;
-    padding: 20px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.8);
-    display: none;
-    z-index: 9999;
-    flex-direction: column;
-}
-.sync-panel.active {
-    display: flex !important;
-}
-.sync-toggle-btn {
-    position: fixed;
-    bottom: 20px;
-    right: 20px;
-    width: 50px;
-    height: 50px;
-    border-radius: 50%;
-    background: var(--omen-deep);
-    border: 2px solid var(--omen-cyan);
-    color: white;
-    font-size: 1.5rem;
-    cursor: pointer;
-    z-index: 9999;
-    transition: 0.3s;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
-.sync-toggle-btn:hover {
-    transform: scale(1.1);
-    background: var(--omen-cyan);
-}
+
 

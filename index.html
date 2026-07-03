@@ -5,6 +5,48 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Copa Primate - Veto System</title>
     <link rel="stylesheet" href="style.css">
+    <style>
+    /* --- MULTIPLAYER SYNC PANEL --- */
+    .sync-panel {
+    position: fixed;
+    bottom: 80px;
+    right: 20px;
+    width: 300px;
+    background: rgba(15, 15, 30, 0.95);
+    backdrop-filter: blur(10px);
+    border: 1px solid var(--omen-cyan);
+    border-radius: 10px;
+    padding: 20px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+    display: none;
+    z-index: 9999;
+    flex-direction: column;
+}
+.sync-panel.active {
+    display: flex !important;
+}
+.sync-toggle-btn {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: var(--omen-deep);
+    border: 2px solid var(--omen-cyan);
+    color: white;
+    font-size: 1.5rem;
+    cursor: pointer;
+    z-index: 9999;
+    transition: 0.3s;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+.sync-toggle-btn:hover {
+    transform: scale(1.1);
+    background: var(--omen-cyan);
+    </style>
 </head>
 <body class="layout-centrado"> <div class="noise-overlay"></div>
 <div class="omen-bg">
@@ -54,26 +96,44 @@
         const shareUrl = `${window.location.origin}${window.location.pathname}?room=${encodeURIComponent(room)}`;
         
         const span = document.getElementById('btnSyncCopyLinkSpan');
-        
+        const orig = span ? span.innerHTML : '';
+
+        const successUI = () => {
+            if (span) {
+                span.innerHTML = '✓ ¡COPIADO!';
+                span.style.background = 'var(--omen-cyan)';
+                span.style.color = 'black';
+                setTimeout(() => { 
+                    span.innerHTML = orig; 
+                    span.style.background = '';
+                    span.style.color = 'white';
+                }, 2000);
+            }
+        };
+
         if (navigator.clipboard && navigator.clipboard.writeText) {
-            navigator.clipboard.writeText(shareUrl).then(() => {
-                if (span) {
-                    const orig = span.innerHTML;
-                    span.innerHTML = '✓ ¡COPIADO!';
-                    span.style.background = 'var(--omen-cyan)';
-                    span.style.color = 'black';
-                    setTimeout(() => { 
-                        span.innerHTML = orig; 
-                        span.style.background = '';
-                        span.style.color = 'white';
-                    }, 2000);
-                }
-            }).catch(err => {
-                prompt('Pulsa Ctrl+C o Cmd+C para copiar el enlace:', shareUrl);
+            navigator.clipboard.writeText(shareUrl).then(successUI).catch(err => {
+                fallbackCopy(shareUrl, successUI);
             });
         } else {
-            prompt('Pulsa Ctrl+C o Cmd+C para copiar el enlace:', shareUrl);
+            fallbackCopy(shareUrl, successUI);
         }
+    }
+
+    function fallbackCopy(text, successCallback) {
+        const textArea = document.createElement("textarea");
+        textArea.value = text;
+        textArea.style.position = "fixed";
+        textArea.style.left = "-999999px";
+        document.body.appendChild(textArea);
+        textArea.select();
+        try {
+            document.execCommand('copy');
+            successCallback();
+        } catch (err) {
+            prompt('Pulsa Ctrl+C o Cmd+C para copiar el enlace:', text);
+        }
+        document.body.removeChild(textArea);
     }
 </script>
 
