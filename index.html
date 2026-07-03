@@ -27,6 +27,57 @@
     </footer>
 </div>
 
+<div id="syncPanel" class="sync-panel">
+    <h3 style="font-family:'BertholdBlock'; color:var(--omen-cyan); font-size:1.5rem; margin-bottom:10px;">📡 SYNC MQTT</h3>
+    <p style="font-family:'Inter', sans-serif; font-size:0.9rem; opacity:0.8; margin-bottom:5px;">Sala de sincronización:</p>
+    <input type="text" id="syncRoomInput" readonly style="width:100%; padding:8px; background:rgba(0,0,0,0.5); border:1px solid rgba(255,255,255,0.2); color:white; font-family:'BertholdBlock'; font-size:1.2rem; text-align:center; margin-bottom:15px; border-radius:5px; outline:none;" onclick="this.select();">
+    <button class="btn-valorant" id="btnSyncCopyLink" style="margin:5px 0; width:100%;" onclick="copiarEnlace()">
+        <span class="btn-content" style="padding: 10px; font-size: 1rem; clip-path:none; border-radius:5px;" id="btnSyncCopyLinkSpan">COPIAR ENLACE ESPECTADOR</span>
+    </button>
+    <button class="btn-valorant" id="btnSyncClose" style="margin:5px 0; width:100%;" onclick="document.getElementById('syncPanel').classList.remove('active')">
+        <span class="btn-content" style="padding: 10px; font-size: 1rem; background: #333; clip-path:none; border-radius:5px;">CERRAR</span>
+    </button>
+</div>
+<button id="syncToggleBtn" class="sync-toggle-btn" title="Menú Multijugador" onclick="mostrarPanelSync()">📡</button>
+
+<script>
+    function mostrarPanelSync() {
+        if (window.isPantalla) return;
+        document.getElementById('syncPanel').classList.toggle('active');
+        const input = document.getElementById('syncRoomInput');
+        if (input) input.value = window.roomName || '';
+    }
+
+    function copiarEnlace() {
+        const input = document.getElementById('syncRoomInput');
+        const room = input ? input.value.trim() : '';
+        const shareUrl = `${window.location.origin}${window.location.pathname}?room=${encodeURIComponent(room)}`;
+        
+        const span = document.getElementById('btnSyncCopyLinkSpan');
+        
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(shareUrl).then(() => {
+                if (span) {
+                    const orig = span.innerHTML;
+                    span.innerHTML = '✓ ¡COPIADO!';
+                    span.style.background = 'var(--omen-cyan)';
+                    span.style.color = 'black';
+                    setTimeout(() => { 
+                        span.innerHTML = orig; 
+                        span.style.background = '';
+                        span.style.color = 'white';
+                    }, 2000);
+                }
+            }).catch(err => {
+                prompt('Pulsa Ctrl+C o Cmd+C para copiar el enlace:', shareUrl);
+            });
+        } else {
+            prompt('Pulsa Ctrl+C o Cmd+C para copiar el enlace:', shareUrl);
+        }
+    }
+</script>
+
+<script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
 <script src="script.js"></script>
 </body>
 </html>

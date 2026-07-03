@@ -5,57 +5,67 @@ const footer = document.getElementById("footer-ui");
 const body = document.body;
 
 let seleccionados = [];
-let modoDeJuego = ""; 
+let modoDeJuego = "";
 let bansMaxA = 0, bansMaxB = 0, bansRealizadosA = 0, bansRealizadosB = 0;
 let turnoDe = "A", faseActual = "ban", mapasEscogidos = [];
+let turnoContador = 1;
 
-// LISTA DE LOS 8 CLASIFICADOS
+// LISTA DE LOS 12 CLASIFICADOS
 const listaEquipos = [
-  { nombre: "Hijas del Kaos", logo: "logo8.png" },
-  { nombre: "Rose Devil", logo: "logo1.png" },
-  { nombre: "Miaus", logo: "logo15.png" },
-  { nombre: "Los Akrtona2", logo: "logo4.png" },
-  { nombre: "TETONES: Equipo Nacional de Somalia", logo: "logo11.png" },
-  { nombre: "Golden Sex", logo: "logo2.png" },
-  { nombre: "Team Obrikat", logo: "logo10.png" },
-  { nombre: "Makaco NinjaPelocho", logo: "logo6.png" }
+    { nombre: "REHENKARMACIÓN", jugadores: ["Satha", "Makflat"], logo: "logo1.png" },
+    { nombre: "Los Akrtona2", jugadores: ["Kira", "Serax"], logo: "logo2.png" },
+    { nombre: "Entry Baiters", jugadores: ["レックウザ ", "Militantedelsoe"], logo: "logo5.png" },
+    { nombre: "Kizuna", jugadores: ["Alezita", "Sarix"], logo: "logo4.png" },
+    { nombre: "Dream Team", jugadores: ["JoKker", "Pepardo"], logo: "logo7.png" },
+    { nombre: "Sakura", jugadores: ["Gustavo", "Carlos"], logo: "logo14.png" },
+    { nombre: "Soul Resonance", jugadores: ["KrypT", "IAngeil-"], logo: "logo11.png" },
+    { nombre: "Thunder Buddies", jugadores: ["Brrokeen", "Pipe"], logo: "logo3.png" },
+    { nombre: "Stranger Picks", jugadores: ["TheDori", "Sotomi"], logo: "logo9.png" },
+    { nombre: "Chuu-Chuu 100% MAX", jugadores: ["MakaQuillo", "Max"], logo: "logo6.png" },
+    { nombre: "M&L’s", jugadores: ["Marru", "Lauliet"], logo: "logo13.png" },
+    { nombre: "MARIIKS", jugadores: ["Acid", "Bru"], logo: "logo10.png" }
 ];
 
 const poolMapas = [
-    { n: "BIND", img: 'https://static.wikia.nocookie.net/valorant/images/2/23/Loading_Screen_Bind.png' },
-    { n: "HAVEN", img: 'https://static.wikia.nocookie.net/valorant/images/7/70/Loading_Screen_Haven.png' },
-    { n: "SPLIT", img: 'https://static.wikia.nocookie.net/valorant/images/d/d6/Loading_Screen_Split.png' },
     { n: "ASCENT", img: 'https://static.wikia.nocookie.net/valorant/images/e/e7/Loading_Screen_Ascent.png' },
-    { n: "ICEBOX", img: 'https://static.wikia.nocookie.net/valorant/images/1/13/Loading_Screen_Icebox.png' },
     { n: "BREEZE", img: 'https://static.wikia.nocookie.net/valorant/images/1/10/Loading_Screen_Breeze.png' },
-    { n: "FRACTURE", img: 'https://static.wikia.nocookie.net/valorant/images/f/fc/Loading_Screen_Fracture.png' },
-    { n: "PEARL", img: 'https://static.wikia.nocookie.net/valorant/images/a/af/Loading_Screen_Pearl.png' },
+    { n: "HAVEN", img: 'https://static.wikia.nocookie.net/valorant/images/7/70/Loading_Screen_Haven.png' },
     { n: "LOTUS", img: 'https://static.wikia.nocookie.net/valorant/images/d/d0/Loading_Screen_Lotus.png' },
+    { n: "SUMMIT", img: 'https://wiki.playvalorant.com/en-us/images/thumb/Loading_Screen_Summit.png/550px-Loading_Screen_Summit.png?33fee' },
     { n: "SUNSET", img: 'https://static.wikia.nocookie.net/valorant/images/5/5c/Loading_Screen_Sunset.png' },
-    { n: "ABYSS", img: 'https://static.wikia.nocookie.net/valorant/images/6/61/Loading_Screen_Abyss.png' },
-    { n: "CORRODE", img: 'https://static.wikia.nocookie.net/valorant/images/6/6f/Loading_Screen_Corrode.png' }
+    { n: "SPLIT", img: 'https://static.wikia.nocookie.net/valorant/images/d/d6/Loading_Screen_Split.png' }
 ];
 
 function cargarModo() {
     body.classList.remove("fase-activa"); // Centrado total
-    
+    document.getElementById("header-app").style.display = "block"; // Asegurar que el header inicial se vea
+
     // NUEVO: Envolvemos los botones en un div con clase 'fade-in'
+    container.className = "main-content";
     container.innerHTML = `
-        <div class="fade-in" style="display:flex; gap:20px;">
-            <button class="btn-valorant" onclick="setModo('BO3')"><span class="btn-content">SEMIFINAL (BO3)</span></button>
-            <button class="btn-valorant" onclick="setModo('BO5')"><span class="btn-content">FINAL (BO5)</span></button>
+        <div class="format-selection fade-in">
+            <div class="format-card" onclick="setModo('BO3')">
+                <h2>BO3</h2>
+                <p>SEMIFINAL</p>
+            </div>
+            <div class="format-card" onclick="setModo('BO5')">
+                <h2>BO5</h2>
+                <p>GRAN FINAL</p>
+            </div>
         </div>
     `;
     tituloFase.textContent = "COPA PRIMATE";
     instruccion.innerHTML = "ELIGE EL FORMATO";
+    if (typeof broadcastState === 'function') broadcastState();
 }
 
 function setModo(modo) {
     modoDeJuego = modo;
-    bansMaxA = (modo === "BO3") ? 5 : 4;
-    bansMaxB = (modo === "BO3") ? 4 : 3;
+    bansMaxA = (modo === "BO3") ? 2 : 1;
+    bansMaxB = (modo === "BO3") ? 2 : 1;
     body.classList.add("fase-activa"); // Sube el contenido para dejar espacio a la grid
     cargarEquipos();
+    if (typeof broadcastState === 'function') broadcastState();
 }
 
 function cargarEquipos() {
@@ -63,23 +73,31 @@ function cargarEquipos() {
     container.innerHTML = '<div class="grid-equipos fade-in" id="grid-eq"></div>';
     const grid = document.getElementById("grid-eq");
     instruccion.innerHTML = "EL PRIMER CLIC ES EL <span>EQUIPO A</span> (Más victorias)";
-    
-    listaEquipos.forEach(eq => {
+
+    listaEquipos.forEach((eq, idx) => {
         const div = document.createElement("div");
-        div.className = "card-equipo"; // La transición suave de borde ya está en el CSS
-        div.innerHTML = `<img src="${eq.logo}" class="equipo-logo"><span class="nombre-equipo">${eq.nombre}</span>`;
+        div.className = "card-equipo stagger-enter";
+        div.style.animationDelay = `${idx * 0.05}s`;
+        div.innerHTML = `
+            <img src="${eq.logo}" class="equipo-logo">
+            <div class="equipo-info">
+                <span class="nombre-equipo">${eq.nombre}</span>
+            </div>
+        `;
         div.onclick = () => {
             const index = seleccionados.findIndex(s => s.nombre === eq.nombre);
             if (index !== -1) {
                 seleccionados.splice(index, 1);
-                div.style.borderColor = "var(--card-border)";
+                div.style.background = "rgba(15, 15, 30, 0.4)";
+                div.style.borderColor = "rgba(255, 255, 255, 0.1)";
                 div.style.boxShadow = "none";
             } else if (seleccionados.length < 2) {
                 seleccionados.push(eq);
-                div.style.borderColor = (seleccionados.length === 1) ? "var(--omen-purple)" : "var(--omen-cyan)";
-                div.style.boxShadow = (seleccionados.length === 1) ? "0 0 15px var(--omen-purple)" : "0 0 15px var(--omen-cyan)";
+                div.style.background = "rgba(20, 20, 30, 0.8)";
+                div.style.borderColor = (seleccionados.length === 1) ? "var(--omen-cyan)" : "var(--valorant-red)";
+                div.style.boxShadow = (seleccionados.length === 1) ? "0 0 20px rgba(95, 208, 255, 0.3)" : "0 0 20px rgba(255, 70, 85, 0.3)";
             }
-            
+
             if (seleccionados.length === 2) {
                 footer.style.display = "flex";
                 // NUEVO: Añadimos clase fade-in al footer cuando aparece
@@ -89,6 +107,7 @@ function cargarEquipos() {
                 footer.style.display = "none";
                 footer.classList.remove("fade-in");
             }
+            if (typeof broadcastState === 'function') broadcastState();
         };
         grid.appendChild(div);
     });
@@ -97,68 +116,163 @@ function cargarEquipos() {
 function iniciarVeto() {
     footer.style.display = "none";
     footer.classList.remove("fade-in");
-    container.innerHTML = '';
-    // NUEVO: Clase 'fade-in' para la grid de mapas
-    container.className = "modo-veto fade-in";
-    tituloFase.textContent = `VETO ${modoDeJuego}`;
-    actualizarInstruccion();
+    document.getElementById("header-app").style.display = "none"; // Ocultar header original
 
+    // Contenedor principal asume la clase de layout del veto
+    container.className = "veto-layout fade-in";
+    turnoContador = 1;
+
+    const eqA = seleccionados[0];
+    const eqB = seleccionados[1];
+
+    container.innerHTML = `
+        <header class="veto-top-header">
+            <div class="veto-team-a">
+                <img src="${eqA.logo}" alt="${eqA.nombre}">
+                <div class="team-name">
+                    <h2>${eqA.nombre.toUpperCase()}</h2>
+                </div>
+            </div>
+            
+            <div class="veto-status-center">
+                <div class="veto-timer">48</div>
+                <div class="veto-action-text">VOTAR MAPA</div>
+            </div>
+            
+            <div class="veto-team-b">
+                <div class="team-name" style="text-align: right;">
+                    <h2>${eqB.nombre.toUpperCase()}</h2>
+                </div>
+                <img src="${eqB.logo}" alt="${eqB.nombre}">
+            </div>
+        </header>
+        
+        <div class="veto-main-area">
+            <aside class="veto-sidebar" id="veto-sidebar">
+                <!-- Historial irá aquí -->
+            </aside>
+            
+            <div class="veto-center-container">
+                <div class="veto-turn-banner" id="veto-turn-banner">
+                    TURNO DE ${eqA.nombre.toUpperCase()}
+                    <span id="veto-turn-tag">BLOQUEANDO MAPA</span>
+                </div>
+                <div class="modo-veto" id="modo-veto-grid">
+                    <!-- Mapas irán aquí -->
+                </div>
+            </div>
+        </div>
+    `;
+
+    const grid = document.getElementById("modo-veto-grid");
     poolMapas.forEach(mapa => {
         const card = document.createElement("div");
-        card.className = "card-mapa"; // Las transiciones de baneo están en el CSS
+        card.className = "card-mapa";
         card.style.backgroundImage = `url('${mapa.img}')`;
         card.innerHTML = `<div class="mapa-label">${mapa.n}</div>`;
-        card.onclick = () => gestionarVeto(card, mapa.n);
-        container.appendChild(card);
+        card.onclick = () => gestionarVeto(card, mapa);
+        grid.appendChild(card);
     });
+
+    actualizarBannerTurno();
+    if (typeof broadcastState === 'function') broadcastState();
 }
 
-function gestionarVeto(card, nombre) {
+function agregarAlHistorial(equipo, accion, mapa, turno) {
+    const sidebar = document.getElementById("veto-sidebar");
+    const num = turnoContador.toString().padStart(2, '0');
+    turnoContador++;
+
+    let teamClass = "decider";
+    if (turno === "A") teamClass = "a";
+    else if (turno === "B") teamClass = "b";
+
+    const div = document.createElement("div");
+    div.className = `history-item fade-in team-${teamClass}`;
+    div.innerHTML = `
+        <div class="hist-header">
+            <span class="hist-num">${num}</span>
+            <span class="hist-team">${equipo.nombre}</span>
+            <span class="hist-action">${accion}</span>
+        </div>
+        <div class="hist-map" style="background-image: url('${mapa.img}')" data-mapname="${mapa.n}"></div>
+    `;
+    sidebar.appendChild(div);
+    sidebar.scrollTop = sidebar.scrollHeight; // Scroll to bottom
+}
+
+function actualizarBannerTurno() {
+    const banner = document.getElementById("veto-turn-banner");
+    if (!banner) return;
+
+    const tag = document.getElementById("veto-turn-tag");
+    const equipo = seleccionados[turnoDe === "A" ? 0 : 1];
+
+    banner.childNodes[0].textContent = `TURNO DE ${equipo.nombre.toUpperCase()} `;
+    tag.textContent = faseActual === "ban" ? "BLOQUEANDO MAPA" : "ELIGIENDO MAPA";
+    tag.style.background = turnoDe === "A" ? "var(--omen-cyan)" : "var(--valorant-red)";
+    tag.style.color = turnoDe === "A" ? "black" : "white";
+}
+
+function gestionarVeto(card, mapa) {
     // FASE DE BANEOS (Intercalado A-B)
     if (faseActual === "ban" && !card.classList.contains("banned")) {
-        // Al añadir la clase, el CSS aplica el borde rojo neón suavemente
         card.classList.add("banned");
+
+        const equipoActual = seleccionados[turnoDe === "A" ? 0 : 1];
+        agregarAlHistorial(equipoActual, "BLOQUEA MAPA", mapa, turnoDe);
+
         if (turnoDe === "A") { bansRealizadosA++; turnoDe = "B"; }
         else { bansRealizadosB++; turnoDe = "A"; }
 
         if (bansRealizadosA === bansMaxA && bansRealizadosB === bansMaxB) {
-            faseActual = "pick"; 
+            faseActual = "pick";
             turnoDe = "B"; // Según tu esquema, B empieza eligiendo primer mapa
         }
-    } 
+        actualizarBannerTurno();
+        if (typeof broadcastState === 'function') broadcastState();
+    }
     // FASE DE PICKS Y LADOS
     else if (faseActual === "pick" && !card.classList.contains("banned") && !card.classList.contains("picked")) {
         card.classList.add("picked");
-        const equipoQuePickea = seleccionados[turnoDe === "A" ? 0 : 1].nombre;
-        const equipoQueEligeLado = seleccionados[turnoDe === "A" ? 1 : 0].nombre;
-        
+        const equipoQuePickea = seleccionados[turnoDe === "A" ? 0 : 1];
+        const equipoQueEligeLado = seleccionados[turnoDe === "A" ? 1 : 0];
+
         card.setAttribute("data-orden", mapasEscogidos.length + 1);
 
+        agregarAlHistorial(equipoQuePickea, "ELIGE MAPA", mapa, turnoDe);
+
         // Abrir selector de lado para el equipo contrario
-        pedirLado(equipoQueEligeLado, (lado) => {
-            mapasEscogidos.push({ mapa: nombre, pickea: equipoQuePickea, lado: lado });
-            
+        pedirLado(equipoQueEligeLado.nombre, (lado) => {
+            mapasEscogidos.push({
+                mapa: mapa,
+                pickea: equipoQuePickea,
+                eligeLado: equipoQueEligeLado,
+                ladoRival: lado // "ATACANTE" o "DEFENSOR"
+            });
+
             // Alternar turno de pick
             turnoDe = (turnoDe === "A") ? "B" : "A";
-            
+
             const limiteMapas = (modoDeJuego === "BO3") ? 2 : 4;
             if (mapasEscogidos.length === limiteMapas) finalizarVeto();
-            else actualizarInstruccion();
+            else actualizarBannerTurno();
+            if (typeof broadcastState === 'function') broadcastState();
         });
     }
-    actualizarInstruccion();
 }
 
 function pedirLado(equipo, callback) {
     const overlay = document.createElement("div");
-    // NUEVO: Clase 'fade-in' para el overlay de selección de lado
-    overlay.className = "fade-in";
-    overlay.style.cssText = "position:fixed; inset:0; background:rgba(0,0,0,0.9); z-index:1000; display:flex; flex-direction:column; justify-content:center; align-items:center;";
+    overlay.className = "glass-overlay fade-in";
     overlay.innerHTML = `
-        <h2 style="font-family:'BertholdBlock'; font-size:2.5rem; margin-bottom:20px;">${equipo.toUpperCase()} ELIGE LADO</h2>
-        <div>
-            <button class="btn-valorant" id="atq"><span class="btn-content">ATACANTE</span></button>
-            <button class="btn-valorant" id="def"><span class="btn-content">DEFENSOR</span></button>
+        <div class="glass-card">
+            <h2 style="font-family:'BertholdBlock'; font-size:3rem; margin-bottom:10px; text-transform:uppercase;">${equipo}</h2>
+            <p style="font-family:'Inter', sans-serif; font-size:1.2rem; color:var(--omen-cyan); margin-bottom:30px; letter-spacing:2px;">ELIGE EL LADO INICIAL</p>
+            <div style="display:flex; gap:20px; justify-content:center;">
+                <button class="btn-valorant" id="atq"><span class="btn-content" style="background:#ff4655;">ATACANTE</span></button>
+                <button class="btn-valorant" id="def"><span class="btn-content" style="background:#00ffcc; color:black;">DEFENSOR</span></button>
+            </div>
         </div>
     `;
     document.body.appendChild(overlay);
@@ -168,28 +282,94 @@ function pedirLado(equipo, callback) {
 
 function finalizarVeto() {
     // El mapa sobrante es el Decider
-    const resto = [...document.querySelectorAll(".card-mapa")].find(c => !c.classList.contains("banned") && !c.classList.contains("picked"));
-    mapasEscogidos.push({ mapa: resto.querySelector(".mapa-label").textContent, pickea: "DECIDER", lado: "Por definir" });
+    const restoCard = [...document.querySelectorAll(".card-mapa")].find(c => !c.classList.contains("banned") && !c.classList.contains("picked"));
+    const mapaDeciderNombre = restoCard.querySelector(".mapa-label").textContent;
+    const mapaDeciderObjeto = poolMapas.find(m => m.n === mapaDeciderNombre);
+
+    agregarAlHistorial({ nombre: "DECIDER" }, "MAPA FINAL", mapaDeciderObjeto, "DECIDER");
+
+    mapasEscogidos.push({
+        mapa: mapaDeciderObjeto,
+        pickea: { nombre: "DECIDER", logo: "" },
+        eligeLado: { nombre: "", logo: "" },
+        ladoRival: "Decider"
+    });
 
     body.classList.remove("fase-activa"); // Centrado para el final
-    container.className = "";
-    // NUEVO: Todo el contenido final se envuelve en un div con 'fade-in'
+    document.getElementById("header-app").style.display = "block"; // Mostrar header
+
+    let htmlCards = mapasEscogidos.map((m, i) => {
+        const isDecider = (i === mapasEscogidos.length - 1);
+        const mapHeader = isDecider ? "DECIDER" : `MAPA ${i + 1}`;
+
+        let sideHtml = '';
+        if (isDecider) {
+            sideHtml = `
+                <div class="side-row decider">
+                    <div class="side-row-team"><span class="side-row-role">LADOS POR SORTEO/COINFLIP</span></div>
+                </div>
+            `;
+        } else {
+            let atacante, defensor;
+            if (m.ladoRival === "ATACANTE") {
+                atacante = m.eligeLado;
+                defensor = m.pickea;
+            } else {
+                defensor = m.eligeLado;
+                atacante = m.pickea;
+            }
+
+            sideHtml = `
+                <div class="side-row attack">
+                    <div class="side-row-team"><img src="${atacante.logo}"> <span>${atacante.nombre}</span></div>
+                    <span class="side-row-role">ATACA</span>
+                </div>
+                <div class="side-row defense">
+                    <div class="side-row-team"><img src="${defensor.logo}"> <span>${defensor.nombre}</span></div>
+                    <span class="side-row-role">DEFIENDE</span>
+                </div>
+            `;
+        }
+
+        const pickHtml = isDecider ? "" : `
+            <div class="final-map-pick-info">
+                <span>Elegido por</span>
+                <img src="${m.pickea.logo}">
+                <strong>${m.pickea.nombre}</strong>
+            </div>
+        `;
+
+        return `
+            <div class="final-map-card stagger-enter" style="background-image: url('${m.mapa.img}'); animation-delay: ${i * 0.2}s">
+                <div class="final-map-content">
+                    <div>
+                        <div class="final-map-header">${mapHeader}</div>
+                        <div class="final-map-name">${m.mapa.n}</div>
+                        ${pickHtml}
+                    </div>
+                    <div class="final-sides-container">
+                        ${sideHtml}
+                    </div>
+                </div>
+            </div>
+        `;
+    }).join("");
+
+    container.className = "main-content fade-in";
     container.innerHTML = `
-        <div class="fade-in">
+        <div style="width: 100%; display: flex; flex-direction: column; align-items: center;">
             <h1 class="titulo-principal">VETO COMPLETADO</h1>
-            <table class="match-table">
-                <thead><tr><th>Orden</th><th>Mapa</th><th>Pickeado por</th><th>Lado Rival</th></tr></thead>
-                <tbody>
-                    ${mapasEscogidos.map((m, i) => `<tr><td>Mapa ${i+1}</td><td style="color:var(--omen-cyan)">${m.mapa}</td><td>${m.pickea}</td><td style="color:var(--valorant-red)">${m.lado}</td></tr>`).join("")}
-                </tbody>
-            </table>
-            <button class="btn-valorant" id="btn-soft-reset"><span class="btn-content">NUEVO VETO</span></button>
+            <div class="final-maps-container">
+                ${htmlCards}
+            </div>
+            <button class="btn-valorant" id="btn-soft-reset" style="margin-top: 50px;"><span class="btn-content">NUEVO VETO</span></button>
         </div>
     `;
     instruccion.innerHTML = "";
 
     // Asignar la función de reinicio al botón
     document.getElementById("btn-soft-reset").onclick = resetearTodo;
+    if (typeof broadcastState === 'function') broadcastState();
 }
 
 // Limpia todas las variables y vuelve al menú de inicio
@@ -201,14 +381,189 @@ function resetearTodo() {
     turnoDe = "A";
     faseActual = "ban";
     mapasEscogidos = [];
-    
+    turnoContador = 1;
+
     // Volvemos a pintar el menú de BO3/BO5
     cargarModo();
-}
-
-function actualizarInstruccion() {
-    const nombre = seleccionados[turnoDe === "A" ? 0 : 1].nombre;
-    instruccion.innerHTML = `${faseActual === "ban" ? "BANEANDO" : "PICKEANDO MAPA"}: <span>${nombre.toUpperCase()}</span>`;
+    if (typeof broadcastState === 'function') broadcastState();
 }
 
 cargarModo();
+
+// ==========================================================================
+// SINCRONIZACIÓN EN VIVO (MQTT VIA HIVEMQ)
+// ==========================================================================
+let mqttClient = null;
+let mqttTopic = '';
+let isApplyingSyncState = false;
+const MSG_HISTORIAL = new Set();
+window.isPantalla = false;
+
+window.addEventListener('load', () => {
+    initializeMQTTSync();
+});
+
+function initializeMQTTSync() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const roomParam = urlParams.get('room');
+    const isAdmin = urlParams.get('admin') === 'true';
+
+    if (roomParam) {
+        window.roomName = roomParam;
+        if (!isAdmin) {
+            window.isPantalla = true;
+            document.body.classList.add('pantalla-mode');
+            // Deshabilitar interacciones en modo pantalla
+            document.body.style.pointerEvents = 'none';
+            const syncBtn = document.getElementById('syncToggleBtn');
+            if (syncBtn) syncBtn.style.display = 'none';
+        }
+        connectMQTT(roomParam);
+    } else {
+        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+        let code = 'VETO-';
+        for (let i = 0; i < 5; i++) code += chars.charAt(Math.floor(Math.random() * chars.length));
+        window.history.replaceState({}, '', `?room=${code}&admin=true`);
+        window.roomName = code;
+        connectMQTT(code);
+    }
+}
+
+function connectMQTT(roomName) {
+    if (mqttClient) mqttClient.end(true);
+    const broker = 'wss://broker.hivemq.com:8884/mqtt';
+    const topicBase = 'copa_primate_veto';
+    mqttTopic = `${topicBase}/${roomName.trim()}`;
+
+    mqttClient = mqtt.connect(broker, {
+        clientId: 'veto_' + Math.random().toString(16).slice(2, 10),
+        clean: true,
+        reconnectPeriod: 3000,
+    });
+
+    mqttClient.on('connect', () => {
+        mqttClient.subscribe(mqttTopic, { qos: 0 });
+        if (window.isPantalla) {
+            publishMQTT({ type: 'REQUEST_STATE' });
+        } else {
+            broadcastState();
+        }
+    });
+
+    mqttClient.on('message', (topic, payload) => {
+        try {
+            const msg = JSON.parse(payload.toString());
+            if (msg._id && MSG_HISTORIAL.has(msg._id)) return;
+            if (msg.type === 'REQUEST_STATE') {
+                if (!window.isPantalla) broadcastState();
+            } else if (msg.type === 'STATE_UPDATE') {
+                isApplyingSyncState = true;
+                aplicarEstado(msg.state);
+                isApplyingSyncState = false;
+            }
+        } catch (e) { }
+    });
+}
+
+function publishMQTT(msg) {
+    if (!mqttClient || !mqttClient.connected) return;
+    const id = Math.random().toString(36).slice(2, 10);
+    msg._id = id;
+    MSG_HISTORIAL.add(id);
+    if (MSG_HISTORIAL.size > 200) MSG_HISTORIAL.delete(MSG_HISTORIAL.values().next().value);
+    mqttClient.publish(mqttTopic, JSON.stringify(msg), { qos: 0, retain: false });
+}
+
+function broadcastState() {
+    if (isApplyingSyncState || window.isPantalla) return;
+    if (!mqttClient || !mqttClient.connected) return;
+
+    const state = {
+        modoDeJuego,
+        seleccionados,
+        bansMaxA, bansMaxB,
+        bansRealizadosA, bansRealizadosB,
+        turnoDe, faseActual,
+        mapasEscogidos, turnoContador,
+        
+        containerHTML: document.getElementById('contenedor-principal').innerHTML,
+        containerClass: document.getElementById('contenedor-principal').className,
+        footerDisplay: document.getElementById('footer-ui').style.display,
+        instruccionHTML: document.getElementById('instruccion').innerHTML,
+        tituloFaseText: document.getElementById('titulo-fase').textContent,
+        bodyFaseActiva: document.body.classList.contains('fase-activa'),
+        headerDisplay: document.getElementById('header-app').style.display
+    };
+
+    publishMQTT({ type: 'STATE_UPDATE', state });
+}
+
+function aplicarEstado(state) {
+    if (!state) return;
+    modoDeJuego = state.modoDeJuego;
+    seleccionados = state.seleccionados || [];
+    bansMaxA = state.bansMaxA;
+    bansMaxB = state.bansMaxB;
+    bansRealizadosA = state.bansRealizadosA;
+    bansRealizadosB = state.bansRealizadosB;
+    turnoDe = state.turnoDe;
+    faseActual = state.faseActual;
+    mapasEscogidos = state.mapasEscogidos || [];
+    turnoContador = state.turnoContador;
+
+    document.getElementById('contenedor-principal').className = state.containerClass || '';
+    document.getElementById('contenedor-principal').innerHTML = state.containerHTML || '';
+    document.getElementById('footer-ui').style.display = state.footerDisplay || 'none';
+    document.getElementById('instruccion').innerHTML = state.instruccionHTML || '';
+    document.getElementById('titulo-fase').textContent = state.tituloFaseText || '';
+    
+    if (state.bodyFaseActiva) document.body.classList.add('fase-activa');
+    else document.body.classList.remove('fase-activa');
+    
+    const headerApp = document.getElementById('header-app');
+    if (headerApp) headerApp.style.display = state.headerDisplay || 'block';
+
+    const overlay = document.querySelector(".glass-overlay");
+    if (overlay) overlay.remove();
+}
+
+// ==========================================================================
+// LÓGICA DEL MENÚ DE SINCRONIZACIÓN
+// ==========================================================================
+function getShareUrl() {
+    return `${window.location.origin}${window.location.pathname}?room=${encodeURIComponent(window.roomName || '')}`;
+}
+
+window.mostrarPanelSync = function() {
+    if (window.isPantalla) return;
+    document.getElementById('syncPanel').classList.toggle('active');
+    const input = document.getElementById('syncRoomInput');
+    if (input) input.value = getShareUrl();
+};
+
+window.copiarEnlace = function() {
+    const shareUrl = getShareUrl();
+    const span = document.getElementById('btnSyncCopyLinkSpan');
+    
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(shareUrl).then(() => {
+            if (span) {
+                const orig = span.innerHTML;
+                span.innerHTML = '✓ ¡COPIADO!';
+                span.style.background = 'var(--omen-cyan)';
+                span.style.color = 'black';
+                setTimeout(() => { 
+                    span.innerHTML = orig; 
+                    span.style.background = '';
+                    span.style.color = 'white';
+                }, 2000);
+            }
+        }).catch(err => {
+            console.error('Error copiando al portapapeles:', err);
+            prompt('Pulsa Ctrl+C o Cmd+C para copiar el enlace:', shareUrl);
+        });
+    } else {
+        // Fallback si se usa file:/// u otro entorno sin portapapeles
+        prompt('Pulsa Ctrl+C o Cmd+C para copiar el enlace:', shareUrl);
+    }
+};
