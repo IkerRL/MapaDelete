@@ -393,39 +393,17 @@ cargarModo();
 // ================================================================
 // SINCRONIZACIÓN EN VIVO (MQTT via HiveMQ)
 // ================================================================
-const syncToggleBtn = document.getElementById('syncToggleBtn');
-const syncPanel = document.getElementById('syncPanel');
-const syncPulse = document.getElementById('syncPulse');
-const syncStatusBadge = document.getElementById('syncStatusBadge');
-const syncRoomInput = document.getElementById('syncRoomInput');
-const btnSyncConnect = document.getElementById('btnSyncConnect');
-const btnSyncCopyLink = document.getElementById('btnSyncCopyLink');
-const btnSyncDisconnect = document.getElementById('btnSyncDisconnect');
-const syncConnectedActions = document.getElementById('syncConnectedActions');
-const syncBrokerInput = document.getElementById('syncBrokerInput');
-const syncTopicInput = document.getElementById('syncTopicInput');
 
 let mqttClient = null;
 let mqttTopic = '';
 let isApplyingSyncState = false;
-
-// Historial de mensajes para evitar duplicados (self-echo)
 const MSG_HISTORIAL = new Set();
 window.isPantalla = false;
 
-// Toggle panel
-if (syncToggleBtn) {
-    syncToggleBtn.addEventListener('click', () => {
-        if (syncPanel) syncPanel.classList.toggle('active');
-    });
-}
-document.addEventListener('click', (e) => {
-    const monkeyRight = document.querySelector('.monkey-right');
-    const isMonkeyClick = monkeyRight && monkeyRight.contains(e.target);
-    if (!isMonkeyClick && syncPanel && !syncPanel.contains(e.target) && syncToggleBtn && !syncToggleBtn.contains(e.target)) {
-        syncPanel.classList.remove('active');
-    }
-});
+// Elementos de la UI
+let syncToggleBtn, syncPanel, syncPulse, syncStatusBadge, syncRoomInput;
+let btnSyncConnect, btnSyncCopyLink, btnSyncDisconnect, syncConnectedActions;
+let syncBrokerInput, syncTopicInput;
 
 // Generar código de sala aleatorio
 function generateRandomRoom() {
@@ -437,42 +415,104 @@ function generateRandomRoom() {
     return code;
 }
 
-// Auto-rellenar sala desde URL o generar una nueva
-const urlParams = new URLSearchParams(window.location.search);
-const roomParam = urlParams.get('room');
-const isPantalla = urlParams.get('pantalla') === 'true';
-const isAdmin = urlParams.get('admin') === 'true';
+window.addEventListener('load', () => {
+    // Inicializar elementos de DOM cuando estamos seguros de que existe
+    syncToggleBtn = document.getElementById('syncToggleBtn');
+    syncPanel = document.getElementById('syncPanel');
+    syncPulse = document.getElementById('syncPulse');
+    syncStatusBadge = document.getElementById('syncStatusBadge');
+    syncRoomInput = document.getElementById('syncRoomInput');
+    btnSyncConnect = document.getElementById('btnSyncConnect');
+    btnSyncCopyLink = document.getElementById('btnSyncCopyLink');
+    btnSyncDisconnect = document.getElementById('btnSyncDisconnect');
+    syncConnectedActions = document.getElementById('syncConnectedActions');
+    syncBrokerInput = document.getElementById('syncBrokerInput');
+    syncTopicInput = document.getElementById('syncTopicInput');
 
-// Determinar el rol/modo de forma dinámica
-if (roomParam) {
-    window.roomName = roomParam;
-
-    // Si tiene sala por URL pero no tiene &admin=true, por defecto actúa como Pantalla
-    if (!isAdmin) {
-        window.isPantalla = true;
-        document.body.classList.add('pantalla-mode');
-
-        // Si es el modo de pantalla limpia de OBS, añadimos obs-mode para desactivar interacciones
-        if (isPantalla) {
-            document.body.classList.add('obs-mode');
-        } else {
-            // Si no es OBS limpio, mostramos el botón de admin (si existe en el DOM)
-            const adminBtn = document.getElementById('admin-btn');
-            if (adminBtn) adminBtn.style.display = 'block';
-        }
+    // Toggle panel
+    if (syncToggleBtn) {
+        syncToggleBtn.addEventListener('click', () => {
+            if (syncPanel) syncPanel.classList.toggle('active');
+        });
     }
 
-    // Conectar automáticamente a la sala
-    if (syncRoomInput) syncRoomInput.value = roomParam;
-    setTimeout(() => connectMQTT(roomParam), 600);
-} else {
-    // Si abrimos la URL raíz sin parámetros, es modo Admin por defecto y genera código de sala
-    const code = generateRandomRoom();
-    if (syncRoomInput) syncRoomInput.value = code;
-    window.roomName = code;
-    window.history.replaceState({}, '', `?room=${code}&admin=true`);
-    connectMQTT(code);
-}
+    document.addEventListener('click', (e) => {
+        const monkeyRight = document.querySelector('.monkey-right');
+        const isMonkeyClick = monkeyRight && monkeyRight.contains(e.target);
+        if (!isMonkeyClick && syncPanel && !syncPanel.contains(e.target) && syncToggleBtn && !syncToggleBtn.contains(e.target)) {
+            syncPanel.classList.remove('active');
+        }
+    });
+
+    // Auto-rellenar sala desde URL o generar una nueva
+    const urlParams = new URLSearchParams(window.location.search);
+    const roomParam = urlParams.get('room');
+    const isPantalla = urlParams.get('pantalla') === 'true';
+    const isAdmin = urlParams.get('admin') === 'true';
+
+    // Determinar el rol/modo de forma dinámica
+    if (roomParam) {
+        window.roomName = roomParam;
+
+        // Si tiene sala por URL pero no tiene &admin=true, por defecto actúa como Pantalla
+        if (!isAdmin) {
+            window.isPantalla = true;
+            document.body.classList.add('pantalla-mode');
+
+            // Si es el modo de pantalla limpia de OBS, añadimos obs-mode para desactivar interacciones
+            if (isPantalla) {
+                document.body.classList.add('obs-mode');
+            } else {
+                // Si no es OBS limpio, mostramos el botón de admin (si existe en el DOM)
+                const adminBtn = document.getElementById('admin-btn');
+                if (adminBtn) adminBtn.style.display = 'block';
+            }
+        }
+
+        // Conectar automáticamente a la sala
+        if (syncRoomInput) syncRoomInput.value = roomParam;
+        setTimeout(() => connectMQTT(roomParam), 600);
+    } else {
+        // Si abrimos la URL raíz sin parámetros, es modo Admin por defecto y genera código de sala
+        const code = generateRandomRoom();
+        if (syncRoomInput) syncRoomInput.value = code;
+        window.roomName = code;
+        window.history.replaceState({}, '', `?room=${code}&admin=true`);
+        connectMQTT(code);
+    }
+
+    // ── Botones del panel (listeners dentro de load) ────────────────────────────────────────────
+    if (btnSyncConnect) {
+        btnSyncConnect.addEventListener('click', () => {
+            const room = syncRoomInput ? syncRoomInput.value.trim() : (window.roomName || '');
+            if (!room) { alert('Introduce un código de sala válido.'); return; }
+            connectMQTT(room);
+        });
+    }
+
+    if (btnSyncDisconnect) {
+        btnSyncDisconnect.addEventListener('click', () => {
+            if (mqttClient) { mqttClient.end(true); mqttClient = null; }
+            updateConnectionStatus('disconnected');
+        });
+    }
+
+    if (btnSyncCopyLink) {
+        btnSyncCopyLink.addEventListener('click', () => {
+            const room = syncRoomInput ? syncRoomInput.value.trim() : (window.roomName || '');
+            const shareUrl = `${window.location.origin}${window.location.pathname}?room=${encodeURIComponent(room)}`;
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(shareUrl).then(() => {
+                    const orig = btnSyncCopyLink.innerHTML;
+                    btnSyncCopyLink.innerHTML = '✓ ¡COPIADO!';
+                    setTimeout(() => { btnSyncCopyLink.innerHTML = orig; }, 2000);
+                }).catch(() => alert(`Copia este enlace: ${shareUrl}`));
+            } else {
+                prompt('Pulsa Ctrl+C o Cmd+C para copiar el enlace:', shareUrl);
+            }
+        });
+    }
+});
 
 // Función para abrir el panel de control en un popup
 window.abrirPanel = function() {
@@ -514,7 +554,7 @@ function updateConnectionStatus(status) {
         if (syncPulse) syncPulse.classList.add('green');
         if (syncStatusBadge) {
             syncStatusBadge.classList.add('status-connected');
-            syncStatusBadge.textContent = `SALA: ${syncRoomInput ? syncRoomInput.value : ''}`;
+            syncStatusBadge.textContent = `SALA: ${syncRoomInput ? syncRoomInput.value : (window.roomName || '')}`;
         }
         if (btnSyncConnect) btnSyncConnect.style.display = 'none';
         if (syncConnectedActions) syncConnectedActions.style.display = 'flex';
@@ -661,41 +701,9 @@ function aplicarEstado(state) {
     if (overlay) overlay.remove();
 }
 
-// ── Botones del panel ────────────────────────────────────────────
-if (btnSyncConnect) {
-    btnSyncConnect.addEventListener('click', () => {
-        const room = syncRoomInput ? syncRoomInput.value.trim() : '';
-        if (!room) { alert('Introduce un código de sala válido.'); return; }
-        connectMQTT(room);
-    });
-}
-
-if (btnSyncDisconnect) {
-    btnSyncDisconnect.addEventListener('click', () => {
-        if (mqttClient) { mqttClient.end(true); mqttClient = null; }
-        updateConnectionStatus('disconnected');
-    });
-}
-
-if (btnSyncCopyLink) {
-    btnSyncCopyLink.addEventListener('click', () => {
-        const room = syncRoomInput ? syncRoomInput.value.trim() : '';
-        const shareUrl = `${window.location.origin}${window.location.pathname}?room=${encodeURIComponent(room)}`;
-        if (navigator.clipboard && navigator.clipboard.writeText) {
-            navigator.clipboard.writeText(shareUrl).then(() => {
-                const orig = btnSyncCopyLink.innerHTML;
-                btnSyncCopyLink.innerHTML = '✓ ¡COPIADO!';
-                setTimeout(() => { btnSyncCopyLink.innerHTML = orig; }, 2000);
-            }).catch(() => alert(`Copia este enlace: ${shareUrl}`));
-        } else {
-            prompt('Pulsa Ctrl+C o Cmd+C para copiar el enlace:', shareUrl);
-        }
-    });
-}
-
 // Fallback compatible con el onclick HTML de index.html original
 window.copiarEnlace = function() {
-    const room = syncRoomInput ? syncRoomInput.value.trim() : '';
+    const room = (syncRoomInput && syncRoomInput.value.trim()) ? syncRoomInput.value.trim() : (window.roomName || '');
     const shareUrl = `${window.location.origin}${window.location.pathname}?room=${encodeURIComponent(room)}`;
     const span = document.getElementById('btnSyncCopyLinkSpan');
     
